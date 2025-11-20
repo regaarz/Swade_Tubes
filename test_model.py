@@ -1,15 +1,17 @@
 from ultralytics import YOLO
 import cv2
 
-# Load model (ganti path jika perlu)
+# Load model
 model = YOLO("best.pt")
 
-# Buka kamera (0 = webcam utama)
+# Open camera
 cap = cv2.VideoCapture(0)
 
 if not cap.isOpened():
     print("Error: Kamera tidak ditemukan!")
     exit()
+
+threshold = 0.9  # nilai threshold agar tidak asal prediksi
 
 while True:
     ret, frame = cap.read()
@@ -17,22 +19,30 @@ while True:
         print("Gagal membaca frame.")
         break
 
-    # Predict dari frame
+    # Predict
     results = model.predict(frame)[0]
 
-    # Ambil prediksi top-1
-    label = results.names[results.probs.top1]
+    # Predict result
+    top_class = results.probs.top1
+    label = results.names[top_class]
     conf = float(results.probs.top1conf)
 
-    # Tampilkan teks di frame
-    text = f"{label}: {conf:.2f}"
+    # Gunakan threshold
+    if conf < threshold:
+        label_show = "Tidak ada objek"
+        text = f"{label_show}"
+    else:
+        label_show = label
+        text = f"{label_show}: {conf:.2f}"
+
+    # Tampilkan teks
     cv2.putText(frame, text, (10, 30),
                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
 
-    # Tampilkan hasil
-    cv2.imshow("YOLOv8 Classification - Webcam", frame)
+    # Show frame
+    cv2.imshow("YOLOv8 Classification - Webcam (Threshold)", frame)
 
-    # Tekan q untuk keluar
+    # Press q to quit
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
